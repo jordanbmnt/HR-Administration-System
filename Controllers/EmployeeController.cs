@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HR_Administration_System.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -8,32 +9,21 @@ namespace HR_Administration_System.Controllers
 {
     public class EmployeeController : Controller
     {
-        // GET: Employee
         public ActionResult Index()
         {
             return View();
         }
 
-        // GET: Employee/Details/5
-        public ActionResult Details(int id)
+        public ActionResult CreateEdit()
         {
             return View();
         }
 
-        // GET: Employee/Create
-        public ActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: Employee/Create
         [HttpPost]
-        public ActionResult Create(FormCollection collection)
+        public ActionResult CreateEdit(Employee collection)
         {
             try
             {
-                // TODO: Add insert logic here
-
                 return RedirectToAction("Index");
             }
             catch
@@ -42,20 +32,16 @@ namespace HR_Administration_System.Controllers
             }
         }
 
-        // GET: Employee/Edit/5
-        public ActionResult Edit(int id)
+        public ActionResult FormFilter()
         {
             return View();
         }
 
-        // POST: Employee/Edit/5
         [HttpPost]
-        public ActionResult Edit(int id, FormCollection collection)
+        public ActionResult FormFilter(EmployeeFilter collection)
         {
             try
             {
-                // TODO: Add update logic here
-
                 return RedirectToAction("Index");
             }
             catch
