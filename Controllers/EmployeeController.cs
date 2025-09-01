@@ -20,7 +20,7 @@ namespace HR_Administration_System.Controllers
         }
 
         [HttpPost]
-        public ActionResult CreateEdit(Employee collection)
+        public ActionResult CreateEdit(int id)
         {
             try
             {
