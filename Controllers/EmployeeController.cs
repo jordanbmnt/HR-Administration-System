@@ -116,6 +116,24 @@ namespace HR_Administration_System.Controllers
             return RedirectToAction("Index");
         }
 
+        // POST: Employee/ToggleStatus/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult ToggleStatus(int id)
+        {
+            var employee = db.Employees.Find(id);
+            if (employee == null)
+            {
+                return HttpNotFound();
+            }
+
+            // Toggle status
+            employee.Status = employee.Status == "Active" ? "Inactive" : "Active";
+
+            db.SaveChanges();
+            return RedirectToAction("Index");
+        }
+
 
         // GET: Employee/Delete/5
         public ActionResult Delete(int? id)

@@ -131,9 +131,15 @@
                     @foreach (var item in Model)
                     {
                         <tr>
-                            <td>
-                                @Html.ActionLink("Edit", "CreateEdit", new { id = item.Id }, new { @class = "btn btn-sm btn-primary" })
-                                @Html.ActionLink("Activate", "Activate", new { id = item.Id }, new { @class = "btn btn-sm btn-secondary" })
+                            <td class="d-flex gap-4">
+                                @Html.ActionLink("Edit", "CreateEdit", new { id = item.Id }, new { @class = "btn btn-primary" })
+                                @using (Html.BeginForm("ToggleStatus", "Employee", new { id = item.Id }, FormMethod.Post))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-secondary">
+                                        @(item.Status == "Active" ? "Deactivate" : "Activate")
+                                    </button>
+                                }
                             </td>
                             <td>
                                 @Html.DisplayFor(modelItem => item.FirstName)
