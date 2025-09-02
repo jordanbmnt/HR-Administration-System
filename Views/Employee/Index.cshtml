@@ -49,7 +49,6 @@
     <h1 class="display-4 w-75 text-start pt-2 pb-4 m-auto">Employees</h1>
     @using (Html.BeginForm("FormFilter", "Employee", FormMethod.Post, new { @class = "d-flex flex-column align-items-center px-5 pb-3 pt-4 border border-2 w-75 m-auto" }))
     {
-
         @Html.AntiForgeryToken()
 
         <svg onclick="collapseFilterGroup(event)" xmlns="http://www.w3.org/2000/svg" class="align-self-end" width="20" viewBox="0 0 640 640" style="cursor: pointer;">
@@ -60,29 +59,29 @@
             <label for="status" class="form-label">Status</label>
             <select name="status" class="form-select w-50 m-3 d-inline-block">
                 <option value="">- Select -</option>
-                <option value="all">All</option>
-                <option value="active">Active Only</option>
-                <option value="deactive">Deactive Only</option>
+                <option value="all" @(Request["status"] == "all" ? "selected" : "")>All</option>
+                <option value="active" @(Request["status"] == "active" ? "selected" : "")>Active Only</option>
+                <option value="inactive" @(Request["status"] == "inactive" ? "selected" : "")>Deactive Only</option>
             </select>
         </div>
 
         <div class="w-75 d-flex justify-content-between align-items-center filter-components">
             <label for="department" class="form-label">Department</label>
-            <select name="department" class="form-select w-50 m-3 d-inline-block">
-                <option value="">- Select - </option>
-                <option value="all">All</option>
-                <option value="active">Active Only</option>
-                <option value="deactive">Deactive Only</option>
+            <select disabled name="department" class="form-select w-50 m-3 d-inline-block">
+                <option value="">- Select -</option>
+                <option value="all" @(Request["department"] == "all" ? "selected" : "")>All</option>
+                <option value="active" @(Request["department"] == "active" ? "selected" : "")>Active Only</option>
+                <option value="inactive" @(Request["department"] == "inactive" ? "selected" : "")>Deactive Only</option>
             </select>
         </div>
 
         <div class="w-75 d-flex justify-content-between align-items-center filter-components">
             <label for="manager" class="form-label">Manager</label>
-            <select name="manager" class="form-select w-50 m-3 d-inline-block">
-                <option value="">- Select - </option>
-                <option value="all">All</option>
-                <option value="active">Active Only</option>
-                <option value="deactive">Deactive Only</option>
+            <select disabled name="manager" class="form-select w-50 m-3 d-inline-block">
+                <option value="">- Select -</option>
+                <option value="all" @(Request["manager"] == "all" ? "selected" : "")>All</option>
+                <option value="active" @(Request["manager"] == "active" ? "selected" : "")>Active Only</option>
+                <option value="inactive" @(Request["manager"] == "inactive" ? "selected" : "")>Deactive Only</option>
             </select>
         </div>
 

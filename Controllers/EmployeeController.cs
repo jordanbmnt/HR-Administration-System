@@ -15,9 +15,27 @@ namespace HR_Administration_System.Controllers
         private EmployeeDBContext db = new EmployeeDBContext();
 
         // GET: Employee
-        public ActionResult Index()
+        public ActionResult Index(string department, string manager, string status)
         {
-            return View(db.Employees.ToList());
+            var employees = db.Employees.AsQueryable();
+
+            //if (!string.IsNullOrEmpty(department))
+            //{
+            //    employees = employees.Where(e => e.Department == department);
+            //}
+            if (!string.IsNullOrEmpty(manager))
+            {
+                employees = employees.Where(e => e.Manager == manager);
+            }
+            if (!string.IsNullOrEmpty(status))
+            {
+                if(status == "active" || status == "inactive")
+                {
+                    employees = employees.Where(e => e.Status == status);
+                }
+            }
+
+            return View(employees.ToList());
         }
 
         // GET: Employee/Details/5
@@ -40,10 +58,14 @@ namespace HR_Administration_System.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult FormFilter([Bind(Include = "Department,Manager,Status")] EmployeeFilter employeeFilter)
         {
-            if (ModelState.IsValid)
+            if (employeeFilter.Status.Length > 0 || employeeFilter.Manager.Length > 0 || employeeFilter.Department.Length > 0)
             {
-                //Filter with EmployeeFilter data
-                return RedirectToAction("Index");
+                return RedirectToAction("Index", new
+                {
+                    department = employeeFilter.Department,
+                    manager = employeeFilter.Manager,
+                    status = employeeFilter.Status
+                });
             }
 
             return View();
