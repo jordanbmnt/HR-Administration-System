@@ -10,14 +10,22 @@ using HR_Administration_System.Models;
 
 namespace HR_Administration_System.Controllers
 {
-    public class DepartmentsController : Controller
+    public class DepartmentController : Controller
     {
         private DepartmentDBContext db = new DepartmentDBContext();
 
         // GET: Departments
-        public ActionResult Index()
+        public ActionResult Index(string status)
         {
-            return View(db.Departments.ToList());
+            var departments = db.Departments.AsQueryable();
+            if (!string.IsNullOrEmpty(status))
+            {
+                if (status == "active" || status == "inactive")
+                {
+                    departments = departments.Where(e => e.Status == status);
+                }
+            }
+            return View(departments.ToList());
         }
 
         // GET: Departments/Details/5
@@ -35,35 +43,28 @@ namespace HR_Administration_System.Controllers
             return View(department);
         }
 
-        // GET: Departments/Create
-        public ActionResult Create()
+        // POST: Department/FormFilter
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult FormFilter([Bind(Include = "Status")] DepartmentFilter departmentFilter)
         {
+            if (departmentFilter.Status.Length > 0)
+            {
+                return RedirectToAction("Index", new
+                {
+                    status = departmentFilter.Status
+                });
+            }
+
             return View();
         }
 
-        // POST: Departments/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "Id,Name,Manager,Status")] Department department)
-        {
-            if (ModelState.IsValid)
-            {
-                db.Departments.Add(department);
-                db.SaveChanges();
-                return RedirectToAction("Index");
-            }
-
-            return View(department);
-        }
-
-        // GET: Departments/Edit/5
-        public ActionResult Edit(int? id)
+        // GET: Department/CreateEdit/5
+        public ActionResult CreateEdit(int? id)
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return View();
             }
             Department department = db.Departments.Find(id);
             if (department == null)
@@ -73,20 +74,49 @@ namespace HR_Administration_System.Controllers
             return View(department);
         }
 
-        // POST: Departments/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
+        // POST: Department/CreateEdit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit([Bind(Include = "Id,Name,Manager,Status")] Department department)
+        public ActionResult CreateEdit([Bind(Include = "Id,Name,Manager,Status")] Department department)
         {
-            if (ModelState.IsValid)
+            if (department.Id == 0) // new department
             {
-                db.Entry(department).State = EntityState.Modified;
+                db.Departments.Add(department);
                 db.SaveChanges();
                 return RedirectToAction("Index");
             }
-            return View(department);
+
+            // existing department → fetch and update
+            var departmentExists = db.Departments.Find(department.Id);
+            if (departmentExists == null)
+            {
+                return HttpNotFound();
+            }
+
+            departmentExists.Name = department.Name;
+            departmentExists.Manager = department.Manager;
+            departmentExists.Status = department.Status;
+
+            db.SaveChanges();
+            return RedirectToAction("Index");
+        }
+
+        // POST: Department/ToggleStatus/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult ToggleStatus(int id)
+        {
+            var department = db.Departments.Find(id);
+            if (department == null)
+            {
+                return HttpNotFound();
+            }
+
+            // Toggle status
+            department.Status = department.Status == "Active" ? "Inactive" : "Active";
+
+            db.SaveChanges();
+            return RedirectToAction("Index");
         }
 
         // GET: Departments/Delete/5
