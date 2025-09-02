@@ -169,6 +169,7 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\Startup.Auth.cs" />
     <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Controllers\DepartmentsController.cs" />
     <Compile Include="Controllers\EmployeeController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\ManageController.cs" />
@@ -260,6 +261,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
+    <Folder Include="Views\Departments\" />
     <Folder Include="Views\Department\" />
     <Folder Include="Views\Employees\" />
   </ItemGroup>
