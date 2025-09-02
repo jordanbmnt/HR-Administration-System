@@ -1,4 +1,4 @@
-﻿@model IEnumerable<HR_Administration_System.Models.EmployeeFilter>
+﻿@model IEnumerable<HR_Administration_System.Models.Employee>
 
 @{
     ViewBag.Title = "All Employees";
@@ -57,7 +57,7 @@
         </svg>
 
         <div class="w-75 d-flex justify-content-between align-items-center filter-components">
-            <label for="status" class="form-label">@Html.DisplayNameFor(model => model.Status)</label>
+            <label for="status" class="form-label">Status</label>
             <select name="status" class="form-select w-50 m-3 d-inline-block">
                 <option value="">- Select -</option>
                 <option value="all">All</option>
@@ -67,7 +67,7 @@
         </div>
 
         <div class="w-75 d-flex justify-content-between align-items-center filter-components">
-            <label for="department" class="form-label">@Html.DisplayNameFor(model => model.Department)</label>
+            <label for="department" class="form-label">Department</label>
             <select name="department" class="form-select w-50 m-3 d-inline-block">
                 <option value="">- Select - </option>
                 <option value="all">All</option>
@@ -77,7 +77,7 @@
         </div>
 
         <div class="w-75 d-flex justify-content-between align-items-center filter-components">
-            <label for="manager" class="form-label">@Html.DisplayNameFor(model => model.Manager)</label>
+            <label for="manager" class="form-label">Manager</label>
             <select name="manager" class="form-select w-50 m-3 d-inline-block">
                 <option value="">- Select - </option>
                 <option value="all">All</option>
@@ -129,42 +129,33 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>
-                            @Html.ActionLink("Edit", "CreateEdit", new { id = 2 }, new { @class = "btn btn-sm btn-primary" })
-                            @Html.ActionLink("Activate", "CreateEdit", new { id = 3 }, new { @class = "btn btn-sm btn-secondary" })
-                        </td>
-                        <td>TestName</td>
-                        <td>TestSurname</td>
-                        <td>0821111111</td>
-                        <td>test@test.com</td>
-                        <td></td>
-                        <td>Active</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            @Html.ActionLink("Edit", "Edit", new { id = 2 }, new { @class = "btn btn-sm btn-primary" })
-                            @Html.ActionLink("Activate", "Activate", new { id = 3 }, new { @class = "btn btn-sm btn-secondary" })
-                        </td>
-                        <td>TestName</td>
-                        <td>TestSurname</td>
-                        <td>0821111111</td>
-                        <td>test@test.com</td>
-                        <td></td>
-                        <td>Active</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            @Html.ActionLink("Edit", "Edit", new { id = 2 }, new { @class = "btn btn-sm btn-primary" })
-                            @Html.ActionLink("Activate", "Activate", new { id = 3 }, new { @class = "btn btn-sm btn-secondary" })
-                        </td>
-                        <td>TestName</td>
-                        <td>TestSurname</td>
-                        <td>0821111111</td>
-                        <td>test@test.com</td>
-                        <td></td>
-                        <td>Active</td>
-                    </tr>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                @Html.ActionLink("Edit", "CreateEdit", new { id = item.Id }, new { @class = "btn btn-sm btn-primary" })
+                                @Html.ActionLink("Activate", "Activate", new { id = item.Id }, new { @class = "btn btn-sm btn-secondary" })
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.FirstName)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.LastName)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Telephone)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Email)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Manager)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Status)
+                            </td>
+                        </tr>
+                    }
                 </tbody>
             </table>
         </div>

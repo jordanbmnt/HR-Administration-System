@@ -1,75 +1,133 @@
-﻿using HR_Administration_System.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.Entity;
 using System.Linq;
+using System.Net;
 using System.Web;
 using System.Web.Mvc;
+using HR_Administration_System.Models;
 
 namespace HR_Administration_System.Controllers
 {
     public class EmployeeController : Controller
     {
+        private EmployeeDBContext db = new EmployeeDBContext();
+
+        // GET: Employee
         public ActionResult Index()
         {
-            return View();
+            return View(db.Employees.ToList());
         }
 
-        public ActionResult CreateEdit()
+        // GET: Employee/Details/5
+        public ActionResult Details(int? id)
         {
-            return View();
-        }
-
-        [HttpPost]
-        public ActionResult CreateEdit(int id)
-        {
-            try
+            if (id == null)
             {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            Employee employee = db.Employees.Find(id);
+            if (employee == null)
+            {
+                return HttpNotFound();
+            }
+            return View(employee);
+        }
+
+        // POST: Employee/FormFilter
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult FormFilter([Bind(Include = "Department,Manager,Status")] EmployeeFilter employeeFilter)
+        {
+            if (ModelState.IsValid)
+            {
+                //Filter with EmployeeFilter data
                 return RedirectToAction("Index");
             }
-            catch
+
+            return View();
+        }
+
+        // GET: Employee/CreateEdit/5
+        public ActionResult CreateEdit(int? id)
+        {
+            if (id == null)
             {
                 return View();
             }
-        }
-
-        public ActionResult FormFilter()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        public ActionResult FormFilter(EmployeeFilter collection)
-        {
-            try
+            Employee employee = db.Employees.Find(id);
+            if (employee == null)
             {
+                return HttpNotFound();
+            }
+            return View(employee);
+        }
+
+        // POST: Employee/CreateEdit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult CreateEdit([Bind(Include = "Id,FirstName,LastName,Email,Telephone,Manager,Status")] Employee employee)
+        {
+            if (employee.Id == 0) // new employee
+            {
+                db.Employees.Add(employee);
+                db.SaveChanges();
                 return RedirectToAction("Index");
             }
-            catch
+
+            // existing employee → fetch and update
+            var employeeExists = db.Employees.Find(employee.Id);
+            if (employeeExists == null)
             {
-                return View();
+                return HttpNotFound();
             }
+
+            employeeExists.FirstName = employee.FirstName;
+            employeeExists.LastName = employee.LastName;
+            employeeExists.Email = employee.Email;
+            employeeExists.Telephone = employee.Telephone;
+            employeeExists.Manager = employee.Manager;
+            employeeExists.Status = employee.Status;
+
+            db.SaveChanges();
+            return RedirectToAction("Index");
         }
+
 
         // GET: Employee/Delete/5
-        public ActionResult Delete(int id)
+        public ActionResult Delete(int? id)
         {
-            return View();
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            Employee employee = db.Employees.Find(id);
+            if (employee == null)
+            {
+                return HttpNotFound();
+            }
+            return View(employee);
         }
 
         // POST: Employee/Delete/5
-        [HttpPost]
-        public ActionResult Delete(int id, FormCollection collection)
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public ActionResult DeleteConfirmed(int id)
         {
-            try
-            {
-                // TODO: Add delete logic here
+            Employee employee = db.Employees.Find(id);
+            db.Employees.Remove(employee);
+            db.SaveChanges();
+            return RedirectToAction("Index");
+        }
 
-                return RedirectToAction("Index");
-            }
-            catch
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
             {
-                return View();
+                db.Dispose();
             }
+            base.Dispose(disposing);
         }
     }
 }
