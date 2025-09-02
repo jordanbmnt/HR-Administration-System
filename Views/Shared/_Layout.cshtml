@@ -27,6 +27,12 @@
                     <li class="nav-item">
                         @Html.ActionLink("Add Employees", "CreateEdit", "Employee", null, new { @class = "nav-link" })
                     </li>
+                    <li class="nav-item">
+                        @Html.ActionLink("View Departmements", "Index", "Department", null, new { @class = "nav-link" })
+                    </li>
+                    <li class="nav-item">
+                        @Html.ActionLink("Add Departments", "CreateEdit", "Department", null, new { @class = "nav-link" })
+                    </li>
                 </ul>
                 @Html.Partial("_LoginPartial")
             </div>
