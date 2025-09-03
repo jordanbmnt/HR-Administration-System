@@ -49,9 +49,7 @@
             <label for="manager" class="form-label">Manager</label>
             <select name="manager" class="form-select w-50 m-3 d-inline-block">
                 <option value="">- Select -</option>
-                @if (Model.ToList().Count() > 0)
-                {
-                    foreach (var item in Model)
+                @foreach (var item in Model)
                     {
                         var managerValue = item.Manager ?? "";
                         if (managerValue == "") { continue; }
@@ -59,13 +57,6 @@
                             @managerValue
                         </option>
                     }
-                } else {
-                    <tr>
-                        <td class="text-black-50" colspan="4">
-                            No documents available
-                        </td>
-                    </tr>
-                }
             </select>
 
         </div>
@@ -113,36 +104,45 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var item in Model)
+                    @if (Model.ToList().Count() > 0)
                     {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="d-flex gap-4">
+                                    @Html.ActionLink("Edit", "CreateEdit", new { id = item.Id }, new { @class = "btn btn-primary" })
+                                    @using (Html.BeginForm("ToggleStatus", "Employee", new { id = item.Id }, FormMethod.Post))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-secondary">
+                                            @(item.Status == "Active" ? "Deactivate" : "Activate")
+                                        </button>
+                                    }
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.FirstName)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.LastName)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.Telephone)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.Email)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.Manager)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.Status)
+                                </td>
+                            </tr>
+                        }
+                    } else {
                         <tr>
-                            <td class="d-flex gap-4">
-                                @Html.ActionLink("Edit", "CreateEdit", new { id = item.Id }, new { @class = "btn btn-primary" })
-                                @using (Html.BeginForm("ToggleStatus", "Employee", new { id = item.Id }, FormMethod.Post))
-                                {
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-secondary">
-                                        @(item.Status == "Active" ? "Deactivate" : "Activate")
-                                    </button>
-                                }
-                            </td>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.FirstName)
-                            </td>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.LastName)
-                            </td>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.Telephone)
-                            </td>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.Email)
-                            </td>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.Manager)
-                            </td>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.Status)
+                            <td class="text-black-50" colspan="7">
+                                No documents available
                             </td>
                         </tr>
                     }
