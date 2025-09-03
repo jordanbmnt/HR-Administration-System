@@ -22,7 +22,7 @@
         <div class="w-75 d-flex justify-content-between align-items-center filter-components">
             <label for="status" class="form-label">Status</label>
             <select name="status" class="form-select w-50 m-3 d-inline-block">
-                <option value="">- Select -</option>
+                <option disabled value="all">- Select -</option>
                 <option value="all" @(Request["status"] == "all" ? "selected" : "")>All</option>
                 <option value="active" @(Request["status"] == "active" ? "selected" : "")>Active Only</option>
                 <option value="inactive" @(Request["status"] == "inactive" ? "selected" : "")>Deactive Only</option>
@@ -95,6 +95,7 @@
                     }
                 </tbody>
             </table>
+            @Html.Partial("_Pagination")
         </div>
     </section>
 </div>

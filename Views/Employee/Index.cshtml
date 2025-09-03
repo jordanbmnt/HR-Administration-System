@@ -22,7 +22,7 @@
         <div class="w-75 d-flex justify-content-between align-items-center filter-components">
             <label for="status" class="form-label">Status</label>
             <select name="status" class="form-select w-50 m-3 d-inline-block">
-                <option value="">- Select -</option>
+                <option disabled value="all">- Select -</option>
                 <option value="all" @(Request["status"] == "all" ? "selected" : "")>All</option>
                 <option value="active" @(Request["status"] == "active" ? "selected" : "")>Active Only</option>
                 <option value="inactive" @(Request["status"] == "inactive" ? "selected" : "")>Deactive Only</option>
@@ -32,7 +32,7 @@
         <div class="w-75 d-flex justify-content-between align-items-center filter-components">
             <label for="department" class="form-label">Department</label>
             <select disabled name="department" class="form-select w-50 m-3 d-inline-block">
-                <option value="">- Select -</option>
+                <option disabled value="all">- Select -</option>
                 <option value="all" @(Request["department"] == "all" ? "selected" : "")>All</option>
                 <option value="active" @(Request["department"] == "active" ? "selected" : "")>Active Only</option>
                 <option value="inactive" @(Request["department"] == "inactive" ? "selected" : "")>Deactive Only</option>
@@ -42,7 +42,7 @@
         <div class="w-75 d-flex justify-content-between align-items-center filter-components">
             <label for="manager" class="form-label">Manager</label>
             <select disabled name="manager" class="form-select w-50 m-3 d-inline-block">
-                <option value="">- Select -</option>
+                <option disabled value="all">- Select -</option>
                 <option value="all" @(Request["manager"] == "all" ? "selected" : "")>All</option>
                 <option value="active" @(Request["manager"] == "active" ? "selected" : "")>Active Only</option>
                 <option value="inactive" @(Request["manager"] == "inactive" ? "selected" : "")>Deactive Only</option>
@@ -127,6 +127,7 @@
                     }
                 </tbody>
             </table>
+            @Html.Partial("_Pagination")
         </div>
     </section>
 </div>
