@@ -1,0 +1,38 @@
+﻿<style>
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+        width: 100%;
+    }
+
+    .pagination .pages {
+        display: inline-block;
+    }
+
+    .pagination button {
+        color: black;
+        float: left;
+        padding: 8px 16px;
+        text-decoration: none;
+    }
+
+        .pagination button.active {
+            background-color: #0b5ed7;
+            color: white;
+        }
+
+    .pagination button:hover:not(.active) {
+        background-color: #ddd;
+        border: none;
+    }
+</style>
+
+<div class="pagination">
+    <button class="btn" href="#">&laquo;</button>
+    <div class="pages">
+        <button class="active btn" href="#">1</button>
+    </div>
+    <button class="btn" href="#">&raquo;</button>
+</div>
