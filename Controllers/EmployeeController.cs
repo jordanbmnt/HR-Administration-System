@@ -58,7 +58,7 @@ namespace HR_Administration_System.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult FormFilter([Bind(Include = "Department,Manager,Status")] EmployeeFilter employeeFilter)
         {
-            if (employeeFilter.Status.Length > 0 || employeeFilter.Manager.Length > 0 || employeeFilter.Department.Length > 0)
+            if (!string.IsNullOrEmpty(employeeFilter.Status) || !string.IsNullOrEmpty(employeeFilter.Manager) || !string.IsNullOrEmpty(employeeFilter.Department))
             {
                 return RedirectToAction("Index", new
                 {
