@@ -4,46 +4,10 @@
     ViewBag.Title = "All Employees";
 }
 
-<style>
-    svg {
-        transition: transform 0.3s ease;
-        transform-origin: center;
-    }
-
-    .filter-components {
-        transition: all 0.3s ease;
-        opacity: 1;
-        max-height: 100px;
-        overflow: hidden;
-    }
-
-        .filter-components.collapsed {
-            opacity: 0;
-            max-height: 0;
-            margin: 0;
-            padding: 0;
-        }
-</style>
-
-<script>
-    function collapseFilterGroup(event) {
-        const svg = event.target.closest('svg');
-        const currentTransform = svg.style.transform;
-        const filterComponents = document.getElementsByClassName('filter-components');
-
-        if (currentTransform.includes('scaleY(-1)')) {
-            svg.style.transform = 'scaleY(1)';
-            for (let i = 0; i < filterComponents.length; i++) {
-                filterComponents[i].classList.remove('collapsed');
-            }
-        } else {
-            svg.style.transform = 'scaleY(-1)';
-            for (let i = 0; i < filterComponents.length; i++) {
-                filterComponents[i].classList.add('collapsed');
-            }
-        }
-    }
-</script>
+<head>
+    @Styles.Render("~/Content/filter-component.css")
+    @Scripts.Render("~/Scripts/filter-component.js")
+</head>
 
 <div class="text-center">
     <h1 class="display-4 w-75 text-start pt-2 pb-4 m-auto">Employees</h1>
