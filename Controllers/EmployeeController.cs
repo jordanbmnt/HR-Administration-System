@@ -13,16 +13,27 @@ namespace HR_Administration_System.Controllers
     public class EmployeeController : Controller
     {
         private EmployeeDBContext db = new EmployeeDBContext();
+        private DepartmentDBContext dbDepartment = new DepartmentDBContext();
 
         // GET: Employee
         public ActionResult Index(string department, string manager, string status)
         {
             var employees = db.Employees.AsQueryable();
+            var departments = dbDepartment.Departments.ToList();
 
-            //if (!string.IsNullOrEmpty(department))
-            //{
-            //    employees = employees.Where(e => e.Department == department);
-            //}
+            if (!string.IsNullOrEmpty(department))
+            {
+                if(department != "all")
+                {
+                    IEnumerable<Department> filteredDepartments = departments.Where(e => e.Name == department);
+                    var managers = filteredDepartments
+                    .Select(d => d.Manager)
+                    .Distinct()
+                    .ToList();
+
+                    employees = employees.Where(e => managers.Contains(e.Manager));
+                }
+            }
             if (!string.IsNullOrEmpty(manager))
             {
                 employees = employees.Where(e => e.Manager == manager);
@@ -34,7 +45,7 @@ namespace HR_Administration_System.Controllers
                     employees = employees.Where(e => e.Status == status);
                 }
             }
-
+            ViewBag.Departments = dbDepartment.Departments.ToList();
             return View(employees.ToList());
         }
 
