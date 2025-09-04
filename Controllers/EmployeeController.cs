@@ -222,4 +222,188 @@ namespace HR_Administration_System.Controllers
             }
 
             Employee employee = await db.Employees
-                .Include(e => e.
+                .Include(e => e.Manager)
+                .FirstOrDefaultAsync(e => e.Id == id);
+
+            if (employee == null)
+            {
+                return HttpNotFound();
+            }
+
+            // Check if employee is a manager
+            var departmentsManaged = await db.Departments
+                .CountAsync(d => d.ManagerId == id && d.Status == "Active");
+
+            var subordinatesCount = await db.Employees
+                .CountAsync(e => e.ManagerId == id && e.Status == "Active");
+
+            ViewBag.DepartmentsManaged = departmentsManaged;
+            ViewBag.SubordinatesCount = subordinatesCount;
+
+            return View(employee);
+        }
+
+        // POST: Employee/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        [HRAdminOnly]
+        public async Task<ActionResult> DeleteConfirmed(int id)
+        {
+            Employee employee = await db.Employees.FindAsync(id);
+
+            // Soft delete by setting status to Inactive
+            employee.Status = "Inactive";
+            db.Entry(employee).State = EntityState.Modified;
+
+            // Deactivate all employee-department relationships
+            var employeeDepartments = db.EmployeeDepartments
+                .Where(ed => ed.EmployeeId == id && ed.IsActive);
+
+            foreach (var ed in employeeDepartments)
+            {
+                ed.IsActive = false;
+                ed.EndDate = DateTime.Now;
+            }
+
+            // Deactivate the user account
+            if (!string.IsNullOrEmpty(employee.ApplicationUserId))
+            {
+                var user = await db.Users.FindAsync(employee.ApplicationUserId);
+                if (user != null)
+                {
+                    user.LockoutEnabled = true;
+                    user.LockoutEndDateUtc = DateTime.MaxValue; // Permanently locked out
+                }
+            }
+
+            await db.SaveChangesAsync();
+
+            TempData["Success"] = "Employee deactivated successfully.";
+            return RedirectToAction("Index");
+        }
+
+        // GET: Employee/ResetPassword/5
+        [HRAdminOnly]
+        public async Task<ActionResult> ResetPassword(int? id)
+        {
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+
+            Employee employee = await db.Employees.FindAsync(id);
+            if (employee == null)
+            {
+                return HttpNotFound();
+            }
+
+            ViewBag.EmployeeName = employee.FullName;
+            ViewBag.EmployeeEmail = employee.Email;
+
+            return View();
+        }
+
+        // POST: Employee/ResetPassword/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [HRAdminOnly]
+        public async Task<ActionResult> ResetPassword(int id)
+        {
+            Employee employee = await db.Employees.FindAsync(id);
+            if (employee == null)
+            {
+                return HttpNotFound();
+            }
+
+            if (string.IsNullOrEmpty(employee.ApplicationUserId))
+            {
+                TempData["Error"] = "This employee does not have a user account.";
+                return RedirectToAction("Details", new { id = id });
+            }
+
+            var userManager = new ApplicationUserManager(
+                new Microsoft.AspNet.Identity.EntityFramework.UserStore<ApplicationUser>(db));
+
+            // Generate password reset token
+            var token = await userManager.GeneratePasswordResetTokenAsync(employee.ApplicationUserId);
+
+            // Reset to default password
+            var result = await userManager.ResetPasswordAsync(
+                employee.ApplicationUserId,
+                token,
+                "Password123#");
+
+            if (result.Succeeded)
+            {
+                TempData["Success"] = $"Password reset successfully for {employee.FullName}. New password is: Password123#";
+            }
+            else
+            {
+                TempData["Error"] = $"Failed to reset password: {string.Join(", ", result.Errors)}";
+            }
+
+            return RedirectToAction("Details", new { id = id });
+        }
+
+        // GET: Employee/MyProfile
+        public async Task<ActionResult> MyProfile()
+        {
+            var currentUserId = User.Identity.GetUserId();
+            var currentUser = await db.Users
+                .Include(u => u.Employee)
+                .FirstOrDefaultAsync(u => u.Id == currentUserId);
+
+            if (currentUser?.EmployeeId == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden,
+                    "No employee profile associated with your account.");
+            }
+
+            return RedirectToAction("Details", new { id = currentUser.EmployeeId });
+        }
+
+        // GET: Employee/Subordinates/5
+        public async Task<ActionResult> Subordinates(int? id)
+        {
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+
+            var employee = await db.Employees.FindAsync(id);
+            if (employee == null)
+            {
+                return HttpNotFound();
+            }
+
+            // Check if user can view subordinates
+            var currentUserId = User.Identity.GetUserId();
+            var currentUser = await db.Users.Include(u => u.Employee).FirstOrDefaultAsync(u => u.Id == currentUserId);
+
+            if (!User.IsInRole("HRAdministrator") &&
+                !User.IsInRole("Manager") &&
+                currentUser?.EmployeeId != id)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+            }
+
+            var subordinates = await db.Employees
+                .Where(e => e.ManagerId == id && e.Status == "Active")
+                .OrderBy(e => e.LastName)
+                .ThenBy(e => e.FirstName)
+                .ToListAsync();
+
+            ViewBag.ManagerName = employee.FullName;
+            return View(subordinates);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                db.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+    }
+}
