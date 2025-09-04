@@ -1,184 +1,225 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data;
 using System.Data.Entity;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Net;
-using System.Web;
 using System.Web.Mvc;
 using HR_Administration_System.Models;
+using HR_Administration_System.Attributes;
+using HR_Administration_System.Services;
+using Microsoft.AspNet.Identity;
 
 namespace HR_Administration_System.Controllers
 {
+    [Authorize]
     public class EmployeeController : Controller
     {
-        private EmployeeDBContext db = new EmployeeDBContext();
-        private DepartmentDBContext dbDepartment = new DepartmentDBContext();
+        private ApplicationDbContext db = new ApplicationDbContext();
+        private UserService userService;
+
+        public EmployeeController()
+        {
+            userService = new UserService(db);
+        }
 
         // GET: Employee
-        public ActionResult Index(string department, string manager, string status)
+        public async Task<ActionResult> Index()
         {
-            var employees = db.Employees.AsQueryable();
-            var departments = dbDepartment.Departments.ToList();
+            var currentUserId = User.Identity.GetUserId();
+            var currentUser = await db.Users.Include(u => u.Employee).FirstOrDefaultAsync(u => u.Id == currentUserId);
 
-            if (!string.IsNullOrEmpty(department))
+            IQueryable<Employee> employees;
+
+            if (User.IsInRole("HRAdministrator"))
             {
-                if(department != "all")
-                {
-                    IEnumerable<Department> filteredDepartments = departments.Where(e => e.Name == department);
-                    var managers = filteredDepartments
-                    .Select(d => d.Manager)
-                    .Distinct()
+                // HR Admin can see all employees
+                employees = db.Employees.Include(e => e.Manager);
+            }
+            else if (User.IsInRole("Manager") && currentUser?.EmployeeId != null)
+            {
+                // Managers can see employees in their departments
+                var managerDepartments = db.Departments
+                    .Where(d => d.ManagerId == currentUser.EmployeeId)
+                    .Select(d => d.Id)
                     .ToList();
 
-                    employees = employees.Where(e => managers.Contains(e.Manager));
-                }
+                var employeeIds = db.EmployeeDepartments
+                    .Where(ed => managerDepartments.Contains(ed.DepartmentId) && ed.IsActive)
+                    .Select(ed => ed.EmployeeId)
+                    .Distinct();
+
+                employees = db.Employees
+                    .Where(e => employeeIds.Contains(e.Id) || e.Id == currentUser.EmployeeId)
+                    .Include(e => e.Manager);
             }
-            if (!string.IsNullOrEmpty(manager))
+            else if (currentUser?.EmployeeId != null)
             {
-                employees = employees.Where(e => e.Manager == manager);
+                // Regular employees can only see themselves
+                employees = db.Employees
+                    .Where(e => e.Id == currentUser.EmployeeId)
+                    .Include(e => e.Manager);
             }
-            if (!string.IsNullOrEmpty(status))
+            else
             {
-                if(status == "active" || status == "inactive")
-                {
-                    employees = employees.Where(e => e.Status == status);
-                }
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
             }
-            ViewBag.Departments = dbDepartment.Departments.ToList();
-            return View(employees.ToList());
+
+            return View(await employees.ToListAsync());
         }
 
         // GET: Employee/Details/5
-        public ActionResult Details(int? id)
+        [EmployeeAuthorize]
+        public async Task<ActionResult> Details(int? id)
         {
             if (id == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Employee employee = db.Employees.Find(id);
+
+            Employee employee = await db.Employees
+                .Include(e => e.Manager)
+                .Include(e => e.EmployeeDepartments.Select(ed => ed.Department))
+                .FirstOrDefaultAsync(e => e.Id == id);
+
             if (employee == null)
             {
                 return HttpNotFound();
             }
+
             return View(employee);
         }
 
-        // POST: Employee/FormFilter
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult FormFilter([Bind(Include = "Department,Manager,Status")] EmployeeFilter employeeFilter)
+        // GET: Employee/Create
+        [HRAdminOnly]
+        public ActionResult Create()
         {
-            if (!string.IsNullOrEmpty(employeeFilter.Status) || !string.IsNullOrEmpty(employeeFilter.Manager) || !string.IsNullOrEmpty(employeeFilter.Department))
-            {
-                return RedirectToAction("Index", new
-                {
-                    department = employeeFilter.Department,
-                    manager = employeeFilter.Manager,
-                    status = employeeFilter.Status
-                });
-            }
-
+            ViewBag.ManagerId = new SelectList(db.Employees.Where(e => e.Status == "Active"), "Id", "FullName");
             return View();
         }
 
-        // GET: Employee/CreateEdit/5
-        public ActionResult CreateEdit(int? id)
-        {
-            if (id == null)
-            {
-                return View();
-            }
-            Employee employee = db.Employees.Find(id);
-            if (employee == null)
-            {
-                return HttpNotFound();
-            }
-            return View(employee);
-        }
-
-        // POST: Employee/CreateEdit/5
+        // POST: Employee/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult CreateEdit([Bind(Include = "Id,FirstName,LastName,Email,Telephone,Manager,Status")] Employee employee)
+        [HRAdminOnly]
+        public async Task<ActionResult> Create([Bind(Include = "Id,FirstName,LastName,Email,Telephone,ManagerId,Status")] Employee employee)
         {
-            if (employee.Id == 0) // new employee
+            if (ModelState.IsValid)
             {
+                // Check if email already exists
+                var existingEmployee = await db.Employees.FirstOrDefaultAsync(e => e.Email == employee.Email);
+                if (existingEmployee != null)
+                {
+                    ModelState.AddModelError("Email", "An employee with this email already exists.");
+                    ViewBag.ManagerId = new SelectList(db.Employees.Where(e => e.Status == "Active"), "Id", "FullName", employee.ManagerId);
+                    return View(employee);
+                }
+
                 db.Employees.Add(employee);
-                db.SaveChanges();
+                await db.SaveChangesAsync();
+
+                // Create user account for the employee
+                bool isManager = db.Departments.Any(d => d.ManagerId == employee.Id);
+                var result = await userService.CreateUserForEmployee(employee, isManager);
+
+                if (!result.Succeeded)
+                {
+                    // Log the error or show a message
+                    TempData["Warning"] = $"Employee created but user account creation failed: {string.Join(", ", result.Errors)}";
+                }
+                else
+                {
+                    TempData["Success"] = "Employee and user account created successfully. Default password is: Password123#";
+                }
+
                 return RedirectToAction("Index");
             }
 
-            // existing employee → fetch and update
-            var employeeExists = db.Employees.Find(employee.Id);
-            if (employeeExists == null)
-            {
-                return HttpNotFound();
-            }
-
-            employeeExists.FirstName = employee.FirstName;
-            employeeExists.LastName = employee.LastName;
-            employeeExists.Email = employee.Email;
-            employeeExists.Telephone = employee.Telephone;
-            employeeExists.Manager = employee.Manager;
-            employeeExists.Status = employee.Status;
-
-            db.SaveChanges();
-            return RedirectToAction("Index");
+            ViewBag.ManagerId = new SelectList(db.Employees.Where(e => e.Status == "Active"), "Id", "FullName", employee.ManagerId);
+            return View(employee);
         }
 
-        // POST: Employee/ToggleStatus/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult ToggleStatus(int id)
-        {
-            var employee = db.Employees.Find(id);
-            if (employee == null)
-            {
-                return HttpNotFound();
-            }
-
-            // Toggle status
-            employee.Status = employee.Status == "Active" ? "Inactive" : "Active";
-
-            db.SaveChanges();
-            return RedirectToAction("Index");
-        }
-
-
-        // GET: Employee/Delete/5
-        public ActionResult Delete(int? id)
+        // GET: Employee/Edit/5
+        [EmployeeAuthorize]
+        public async Task<ActionResult> Edit(int? id)
         {
             if (id == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Employee employee = db.Employees.Find(id);
+
+            Employee employee = await db.Employees.FindAsync(id);
             if (employee == null)
             {
                 return HttpNotFound();
             }
+
+            // Only HR Admin can edit manager and status fields
+            if (User.IsInRole("HRAdministrator"))
+            {
+                ViewBag.ManagerId = new SelectList(db.Employees.Where(e => e.Status == "Active" && e.Id != id), "Id", "FullName", employee.ManagerId);
+            }
+            else
+            {
+                ViewBag.IsReadOnly = true;
+            }
+
             return View(employee);
         }
 
-        // POST: Employee/Delete/5
-        [HttpPost, ActionName("Delete")]
+        // POST: Employee/Edit/5
+        [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult DeleteConfirmed(int id)
+        [EmployeeAuthorize]
+        public async Task<ActionResult> Edit([Bind(Include = "Id,FirstName,LastName,Email,Telephone,ManagerId,Status,ApplicationUserId")] Employee employee)
         {
-            Employee employee = db.Employees.Find(id);
-            db.Employees.Remove(employee);
-            db.SaveChanges();
-            return RedirectToAction("Index");
+            var existingEmployee = await db.Employees.AsNoTracking().FirstOrDefaultAsync(e => e.Id == employee.Id);
+
+            if (existingEmployee == null)
+            {
+                return HttpNotFound();
+            }
+
+            // Non-HR administrators cannot change manager or status
+            if (!User.IsInRole("HRAdministrator"))
+            {
+                employee.ManagerId = existingEmployee.ManagerId;
+                employee.Status = existingEmployee.Status;
+                ModelState.Remove("ManagerId");
+                ModelState.Remove("Status");
+            }
+
+            // Preserve ApplicationUserId
+            employee.ApplicationUserId = existingEmployee.ApplicationUserId;
+
+            if (ModelState.IsValid)
+            {
+                db.Entry(employee).State = EntityState.Modified;
+                await db.SaveChangesAsync();
+
+                TempData["Success"] = "Employee updated successfully.";
+                return RedirectToAction("Index");
+            }
+
+            if (User.IsInRole("HRAdministrator"))
+            {
+                ViewBag.ManagerId = new SelectList(db.Employees.Where(e => e.Status == "Active" && e.Id != employee.Id), "Id", "FullName", employee.ManagerId);
+            }
+            else
+            {
+                ViewBag.IsReadOnly = true;
+            }
+
+            return View(employee);
         }
 
-        protected override void Dispose(bool disposing)
+        // GET: Employee/Delete/5
+        [HRAdminOnly]
+        public async Task<ActionResult> Delete(int? id)
         {
-            if (disposing)
+            if (id == null)
             {
-                db.Dispose();
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            base.Dispose(disposing);
-        }
-    }
-}
+
+            Employee employee = await db.Employees
+                .Include(e => e.
