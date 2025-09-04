@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Web;
+using SQLite.CodeFirst;
 
 namespace HR_Administration_System.Models
 {
@@ -16,6 +17,16 @@ namespace HR_Administration_System.Models
 
     public class DepartmentDBContext : DbContext
     {
+        public DepartmentDBContext() : base("name=DepartmentDBContext")
+        {
+        }
+
         public DbSet<Department> Departments { get; set; }
+
+        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        {
+            var sqliteConnectionInitializer = new SqliteCreateDatabaseIfNotExists<DepartmentDBContext>(modelBuilder);
+            Database.SetInitializer(sqliteConnectionInitializer);
+        }
     }
 }
