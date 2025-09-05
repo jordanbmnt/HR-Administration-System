@@ -147,7 +147,7 @@ namespace HR_Administration_System.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
 
-            Employee employee = await db.Employees.FindAsync(id);
+            Employee employee = await db.Employees.FirstOrDefaultAsync(e => e.Id == id);
             if (employee == null)
             {
                 return HttpNotFound();
@@ -249,7 +249,7 @@ namespace HR_Administration_System.Controllers
         [HRAdminOnly]
         public async Task<ActionResult> DeleteConfirmed(int id)
         {
-            Employee employee = await db.Employees.FindAsync(id);
+            Employee employee = await db.Employees.FirstOrDefaultAsync(e => e.Id == id);
 
             // Soft delete by setting status to Inactive
             employee.Status = "Inactive";
@@ -268,7 +268,7 @@ namespace HR_Administration_System.Controllers
             // Deactivate the user account
             if (!string.IsNullOrEmpty(employee.ApplicationUserId))
             {
-                var user = await db.Users.FindAsync(employee.ApplicationUserId);
+                var user = await db.Users.FirstOrDefaultAsync(u => u.Id == employee.ApplicationUserId);
                 if (user != null)
                 {
                     user.LockoutEnabled = true;
@@ -291,7 +291,7 @@ namespace HR_Administration_System.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
 
-            Employee employee = await db.Employees.FindAsync(id);
+            Employee employee = await db.Employees.FirstOrDefaultAsync(e => e.Id == id);
             if (employee == null)
             {
                 return HttpNotFound();
@@ -309,7 +309,7 @@ namespace HR_Administration_System.Controllers
         [HRAdminOnly]
         public async Task<ActionResult> ResetPassword(int id)
         {
-            Employee employee = await db.Employees.FindAsync(id);
+            Employee employee = await db.Employees.FirstOrDefaultAsync(e => e.Id == id);
             if (employee == null)
             {
                 return HttpNotFound();
@@ -370,7 +370,7 @@ namespace HR_Administration_System.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
 
-            var employee = await db.Employees.FindAsync(id);
+            var employee = await db.Employees.FirstOrDefaultAsync(e => e.Id == id);
             if (employee == null)
             {
                 return HttpNotFound();

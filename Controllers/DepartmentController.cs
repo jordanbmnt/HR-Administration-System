@@ -156,7 +156,7 @@ namespace HR_Administration_System.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
 
-            Department department = await db.Departments.FindAsync(id);
+            Department department = await db.Departments.FirstOrDefaultAsync(e => e.Id == id);
             if (department == null)
             {
                 return HttpNotFound();
@@ -245,7 +245,7 @@ namespace HR_Administration_System.Controllers
         [HRAdminOnly]
         public async Task<ActionResult> DeleteConfirmed(int id)
         {
-            Department department = await db.Departments.FindAsync(id);
+            Department department = await db.Departments.FirstOrDefaultAsync(e => e.Id == id);
 
             // Soft delete by setting status to Inactive
             department.Status = "Inactive";
@@ -280,7 +280,7 @@ namespace HR_Administration_System.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
 
-            Department department = await db.Departments.FindAsync(id);
+            Department department = await db.Departments.FirstOrDefaultAsync(e => e.Id == id);
             if (department == null)
             {
                 return HttpNotFound();
